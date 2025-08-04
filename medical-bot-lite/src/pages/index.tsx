@@ -6,7 +6,7 @@ export default function Home() {
 
   const handleSend = async () => {
     const res = await fetch(
-      "https://medical-bot-api-ghgpf6ghccdbhjcp.centralus-01.azurewebsites.net/api/chat",
+      "https://<あなたの Functions の URL>/api/chat",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
