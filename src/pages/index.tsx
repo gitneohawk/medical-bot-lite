@@ -9,17 +9,18 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-interface ISpeechRecognition extends EventTarget {
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  start: () => void;
-  stop: () => void;
-  onresult: ((event: unknown) => void) | null;
-  onend: (() => void) | null;
-}
 
-const recognitionRef = useRef<ISpeechRecognition | null>(null);
+  interface ISpeechRecognition extends EventTarget {
+    lang: string;
+    interimResults: boolean;
+    maxAlternatives: number;
+    start: () => void;
+    stop: () => void;
+    onresult: ((event: unknown) => void) | null;
+    onend: (() => void) | null;
+  }
+
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,15 +75,16 @@ const recognitionRef = useRef<ISpeechRecognition | null>(null);
 
     try {
       const res = await fetch(
-        "/api/chat",
-  {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userInput,
-          history: newMessages,
-        }),
-      });
+        "https://medical-bot-api-ghgpf6ghccdbhjcp.centralus-01.azurewebsites.net/api/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: userInput,
+            history: newMessages,
+          }),
+        }
+      );
       if (!res.ok) throw new Error("AIからの応答取得に失敗しました。");
       const data = await res.json();
       setMessages([...newMessages, { role: "assistant", content: data.reply }]);
@@ -94,7 +96,6 @@ const recognitionRef = useRef<ISpeechRecognition | null>(null);
       ]);
     } finally {
       setIsLoading(false);
-      // フォーカスを戻す
       if (inputRef.current) {
         inputRef.current.focus();
       }
@@ -112,28 +113,28 @@ const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const lastMessage = messages.length > 0 ? messages[messages.length - 1].content : "";
 
   return (
-    <main className="flex flex-col h-screen max-w-4xl mx-auto">
+    <main className="flex flex-col h-screen max-w-2xl mx-auto bg-gray-50">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-white shadow-md">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="病院ロゴ" className="h-14" />
-          <span className="text-lg font-semibold text-gray-700">AI健康相談（PoC）</span>
+          <img src="/logo.png" alt="病院ロゴ" className="h-12 w-auto" />
+          <span className="text-xl font-bold text-gray-800">AI健康相談（PoC）</span>
         </div>
       </div>
 
       {/* 注意事項 */}
-      <div className="bg-yellow-50 border-b border-yellow-200 text-yellow-800 p-3 text-sm">
-        このAIは健康に関する一般的なアドバイスを提供しますが、正確性を保証するものではありません。症状がある場合は必ず医師の診察を受けてください。
+      <div className="bg-yellow-50 border-b border-yellow-200 text-yellow-800 p-3 text-sm text-center">
+        このAIは一般的な健康アドバイスを提供します。正確性は保証されません。症状がある場合は必ず医師の診察を受けてください。
       </div>
 
       {/* チャットエリア */}
-      <div className="flex-1 bg-white flex flex-col">
-        <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
           {messages.map((m, idx) => (
             <div
               key={idx}
-              className={`flex items-end gap-3 ${m.role === "user" ? "flex-row-reverse" : ""}`}
+              className={`flex items-start gap-3 ${m.role === "user" ? "flex-row-reverse" : ""}`}
             >
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
                 {m.role === "user" ? (
@@ -143,10 +144,10 @@ const recognitionRef = useRef<ISpeechRecognition | null>(null);
                 )}
               </div>
               <div
-                className={`max-w-lg p-3 rounded-lg text-sm whitespace-pre-wrap shadow-sm ${
+                className={`max-w-sm p-3 rounded-lg text-sm whitespace-pre-wrap shadow ${
                   m.role === "user"
                     ? "bg-blue-600 text-white rounded-br-none"
-                    : "bg-slate-100 text-slate-800 rounded-bl-none"
+                    : "bg-white text-gray-800 rounded-bl-none border border-gray-200"
                 }`}
               >
                 {m.content}
@@ -158,7 +159,7 @@ const recognitionRef = useRef<ISpeechRecognition | null>(null);
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
                 <CpuChipIcon className="h-6 w-6 text-blue-600" />
               </div>
-              <div className="max-w-lg p-3 rounded-lg text-sm bg-slate-100 text-slate-400 rounded-bl-none shadow-sm">
+              <div className="max-w-sm p-3 rounded-lg text-sm bg-slate-100 text-slate-400 rounded-bl-none shadow">
                 <span className="animate-pulse">考え中...</span>
               </div>
             </div>
@@ -166,7 +167,7 @@ const recognitionRef = useRef<ISpeechRecognition | null>(null);
           <div ref={chatBottomRef} />
         </div>
         {/(人間ドック|健診)/.test(lastMessage) && (
-          <div className="p-4">
+          <div className="p-4 bg-gray-100 border-t border-gray-300">
             <a
               href="https://www.tdhospital.jp/reservation"
               target="_blank"
@@ -179,13 +180,13 @@ const recognitionRef = useRef<ISpeechRecognition | null>(null);
         )}
 
         {/* 入力エリア */}
-        <div className="p-4 bg-white border-t border-slate-200">
-          <div className="flex items-center gap-2 p-1 border border-slate-300 rounded-lg focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all">
+        <div className="p-4 bg-white border-t border-gray-300">
+          <div className="flex items-center gap-2 p-2 border border-gray-400 rounded-lg focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all">
             <textarea
               ref={inputRef}
               readOnly={isLoading}
               className="flex-1 resize-none bg-transparent focus:outline-none p-2"
-              rows={3}
+              rows={2}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
