@@ -1,8 +1,17 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { PaperAirplaneIcon, UserCircleIcon, CpuChipIcon, MicrophoneIcon } from "@heroicons/react/24/solid";
+import type { NextPage } from "next";
+import Head from "next/head";
+import {
+  PaperAirplaneIcon,
+  UserCircleIcon,
+  CpuChipIcon,
+  MicrophoneIcon,
+} from "@heroicons/react/24/solid";
 
-export default function Home() {
+// pagesディレクトリでは "use client" は不要です
+
+const Home: NextPage = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,15 +35,9 @@ export default function Home() {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 音声認識開始
   const startRecognition = () => {
-    const SpeechRecognitionClass = (() => {
-      const w = window as unknown as {
-        webkitSpeechRecognition?: { new (): ISpeechRecognition };
-        SpeechRecognition?: { new (): ISpeechRecognition };
-      };
-      return w.webkitSpeechRecognition || w.SpeechRecognition;
-    })();
+    const SpeechRecognitionClass =
+      (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
 
     if (!SpeechRecognitionClass) {
       alert("お使いのブラウザは音声認識に対応していません");
@@ -46,11 +49,8 @@ export default function Home() {
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
-    recognition.onresult = (event: unknown) => {
-      const e = event as {
-        results: { 0: { 0: { transcript: string } } };
-      };
-      const transcript = e.results[0][0].transcript;
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
       setInput((prev) => prev + (prev ? " " : "") + transcript);
     };
 
@@ -67,7 +67,6 @@ export default function Home() {
     if (!input.trim() || isLoading) return;
     const userInput = input;
 
-    // 先に表示
     const newMessages = [...messages, { role: "user", content: userInput }];
     setMessages(newMessages);
     setInput("");
@@ -92,7 +91,10 @@ export default function Home() {
       console.error("Error during chat:", e);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "エラーが発生しました。時間をおいて再度お試しください。" },
+        {
+          role: "assistant",
+          content: "エラーが発生しました。時間をおいて再度お試しください。",
+        },
       ]);
     } finally {
       setIsLoading(false);
@@ -103,7 +105,7 @@ export default function Home() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((e.nativeEvent as unknown as { isComposing: boolean }).isComposing) return;
+    if ((e.nativeEvent as any).isComposing) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -113,105 +115,135 @@ export default function Home() {
   const lastMessage = messages.length > 0 ? messages[messages.length - 1].content : "";
 
   return (
-    <main className="flex flex-col h-screen max-w-2xl mx-auto bg-gray-50">
-      {/* ヘッダー */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-white shadow-md">
-        <div className="flex items-center gap-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="病院ロゴ" className="h-12 w-auto" />
-          <span className="text-xl font-bold text-gray-800">AI健康相談（PoC）</span>
-        </div>
-      </div>
+    <>
+      <Head>
+        <title>AI健康相談 (PoC)</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      
+      {/* 画面全体のコンテナ */}
+      <div className="w-full h-screen bg-white flex justify-center font-sans">
 
-      {/* 注意事項 */}
-      <div className="bg-yellow-50 border-b border-yellow-200 text-yellow-800 p-3 text-sm text-center">
-        このAIは一般的な健康アドバイスを提供します。正確性は保証されません。症状がある場合は必ず医師の診察を受けてください。
-      </div>
+        {/* チャットUIのメインコンテナ */}
+        <div className="w-full max-w-4xl h-full flex flex-col">
 
-      {/* チャットエリア */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-          {messages.map((m, idx) => (
-            <div
-              key={idx}
-              className={`flex items-start gap-3 ${m.role === "user" ? "flex-row-reverse" : ""}`}
-            >
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
-                {m.role === "user" ? (
-                  <UserCircleIcon className="h-6 w-6 text-slate-500" />
-                ) : (
-                  <CpuChipIcon className="h-6 w-6 text-blue-600" />
-                )}
-              </div>
-              <div
-                className={`max-w-sm p-3 rounded-lg text-sm whitespace-pre-wrap shadow ${
-                  m.role === "user"
-                    ? "bg-blue-600 text-white rounded-br-none"
-                    : "bg-white text-gray-800 rounded-bl-none border border-gray-200"
-                }`}
-              >
-                {m.content}
-              </div>
+          {/* ヘッダー */}
+          <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center gap-4">
+              <img src="/logo.png" alt="病院ロゴ" className="h-10 w-auto" />
+              <h1 className="text-xl font-semibold text-gray-800">AI健康相談 (PoC)</h1>
             </div>
-          ))}
-          {isLoading && (
-            <div className="flex items-end gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
-                <CpuChipIcon className="h-6 w-6 text-blue-600" />
+          </header>
+          
+          {/* 注意書き */}
+          <div className="flex-shrink-0 bg-blue-50 border-b border-blue-200 text-blue-800 p-3 text-sm text-center">
+            <p>このAIは一般的な健康アドバイスを提供します。正確性は保証されません。症状がある場合は必ず医師の診察を受けてください。</p>
+          </div>
+
+          {/* チャットメッセージエリア */}
+          <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+            {/* ... メッセージのmap処理 ... */}
+            {messages.map((m, idx) => (
+              <div
+                key={idx}
+                className={`flex items-start gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+              >
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm">
+                  {m.role === "user" ? (
+                    <UserCircleIcon className="h-6 w-6 text-gray-500" />
+                  ) : (
+                    <CpuChipIcon className="h-6 w-6 text-blue-600" />
+                  )}
+                </div>
+                <div
+                  className={`max-w-xl p-4 rounded-2xl text-base whitespace-pre-wrap shadow-md ${
+                    m.role === "user"
+                      ? "bg-blue-600 text-white rounded-br-none"
+                      : "bg-white text-gray-800 rounded-bl-none border"
+                  }`}
+                >
+                  {m.content}
+                </div>
               </div>
-              <div className="max-w-sm p-3 rounded-lg text-sm bg-slate-100 text-slate-400 rounded-bl-none shadow">
-                <span className="animate-pulse">考え中...</span>
+            ))}
+            {/* ... ローディング表示 ... */}
+            {isLoading && (
+              <div className="flex items-start gap-3 flex-row">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm">
+                  <CpuChipIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="max-w-lg p-4 rounded-2xl text-sm bg-gray-200 text-gray-500 rounded-bl-none">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                  </div>
+                </div>
               </div>
+            )}
+            <div ref={chatBottomRef} />
+          </div>
+
+          {/* 予約ボタン */}
+          {/(人間ドック|健診)/.test(lastMessage) && (
+            <div className="flex-shrink-0 p-4 text-center">
+              <a
+                href="https://www.tdhospital.jp/reservation"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-green-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1"
+              >
+                健診・人間ドックを予約する
+              </a>
             </div>
           )}
-          <div ref={chatBottomRef} />
-        </div>
-        {/(人間ドック|健診)/.test(lastMessage) && (
-          <div className="p-4 bg-gray-100 border-t border-gray-300">
-            <a
-              href="https://www.tdhospital.jp/reservation"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              健診・人間ドックを予約する
-            </a>
-          </div>
-        )}
 
-        {/* 入力エリア */}
-        <div className="p-4 bg-white border-t border-gray-300">
-          <div className="flex items-center gap-2 p-2 border border-gray-400 rounded-lg focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all">
-            <textarea
-              ref={inputRef}
-              readOnly={isLoading}
-              className="flex-1 resize-none bg-transparent focus:outline-none p-2"
-              rows={2}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={isLoading ? "AIが回答中です..." : "メッセージを入力...(Shift+Enterで改行)"}
-            />
-            <button
-              onClick={startRecognition}
-              disabled={isLoading}
-              className={`h-10 w-10 flex-shrink-0 rounded-md flex items-center justify-center transition-colors ${
-                isRecording ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-              title="音声入力"
-            >
-              <MicrophoneIcon className="h-5 w-5" />
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={!input.trim() || isLoading}
-              className="h-10 w-10 flex-shrink-0 bg-blue-600 text-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 flex items-center justify-center transition-colors"
-            >
-              <PaperAirplaneIcon className="h-5 w-5" />
-            </button>
+          {/* 入力フォームエリア */}
+          <div className="flex-shrink-0 p-4 pt-2">
+            <div className="relative">
+              <textarea
+                ref={inputRef}
+                readOnly={isLoading}
+                className="w-full resize-none bg-gray-100 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 p-4 pr-28 text-base text-gray-800 placeholder-gray-500"
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isLoading ? "AIが回答中です..." : "メッセージを入力..."}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = `${target.scrollHeight}px`;
+                }}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <button
+                  onClick={startRecognition}
+                  disabled={isLoading}
+                  className={`h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center transition-colors duration-200 ${
+                    isRecording ? "bg-red-500 text-white" : "text-gray-500 hover:bg-gray-200"
+                  }`}
+                  title="音声入力"
+                >
+                  <MicrophoneIcon className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!input.trim() || isLoading}
+                  className="h-10 w-10 flex-shrink-0 bg-blue-600 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 flex items-center justify-center transition-colors duration-200"
+                  title="送信"
+                >
+                  <PaperAirplaneIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </main>
+
+        </div> {/* */}
+      </div> {/* */}
+    </>
   );
-}
+};
+
+export default Home;
